@@ -467,3 +467,224 @@ What’s included:
     if (!drawer) return;
     drawer.dataset.open = "false";
     lockScroll(false);
+  }
+
+  function lockScroll(lock) {
+    document.body.style.overflow = lock ? "hidden" : "";
+  }
+
+  // --------------------------
+  // Three.js: 3D Object Rotation
+  // --------------------------
+  let three = {
+    initialized: false,
+    renderer: null,
+    scene: null,
+    camera: null,
+    mesh: null,
+    rafId: null,
+    dragging: false,
+    lastX: 0,
+    lastY: 0,
+    rotVelX: 0,
+    rotVelY: 0
+  };
+
+  function initThreeStage() {
+    const host = $("#threeStage");
+    if (!host) return;
+
+    // If already initialized, just ensure correct sizing
+    if (three.initialized) {
+      resizeThree();
+      return;
+    }
+
+    const width = host.clientWidth;
+    const height = host.clientHeight;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    host.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    camera.position.set(0, 0.6, 3.4);
+
+    // Lights (simple but nice)
+    const key = new THREE.DirectionalLight(0xffffff, 1.0);
+    key.position.set(3, 4, 2);
+    scene.add(key);
+
+    const rim = new THREE.DirectionalLight(0x88ccff, 0.7);
+    rim.position.set(-4, 2, -2);
+    scene.add(rim);
+
+    const fill = new THREE.AmbientLight(0xffffff, 0.35);
+    scene.add(fill);
+
+    // Geometry: TorusKnot looks premium and shows rotation well
+    const geo = new THREE.TorusKnotGeometry(0.75, 0.22, 220, 22);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x7c5cff,
+      metalness: 0.55,
+      roughness: 0.24,
+      emissive: 0x061030,
+      emissiveIntensity: 0.35
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
+
+    // Subtle “floor glow” using a plane
+    const floorGeo = new THREE.PlaneGeometry(6, 6);
+    const floorMat = new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.0 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -1.2;
+    scene.add(floor);
+
+    // Save refs
+    three = { ...three, initialized: true, renderer, scene, camera, mesh };
+
+    // Interaction: drag to rotate
+    const dom = renderer.domElement;
+
+    const pointerDown = (e) => {
+      three.dragging = true;
+      const p = getPoint(e);
+      three.lastX = p.x;
+      three.lastY = p.y;
+      dom.setPointerCapture?.(e.pointerId);
+    };
+
+    const pointerMove = (e) => {
+      if (!three.dragging) return;
+      const p = getPoint(e);
+      const dx = p.x - three.lastX;
+      const dy = p.y - three.lastY;
+      three.lastX = p.x;
+      three.lastY = p.y;
+
+      // Rotate: horizontal drag => Y rotation, vertical drag => X rotation
+      three.mesh.rotation.y += dx * 0.01;
+      three.mesh.rotation.x += dy * 0.01;
+
+      // Keep a bit of inertia
+      three.rotVelY = dx * 0.0015;
+      three.rotVelX = dy * 0.0015;
+    };
+
+    const pointerUp = () => {
+      three.dragging = false;
+    };
+
+    dom.addEventListener("pointerdown", pointerDown);
+    dom.addEventListener("pointermove", pointerMove);
+    dom.addEventListener("pointerup", pointerUp);
+    dom.addEventListener("pointercancel", pointerUp);
+
+    // Resize
+    window.addEventListener("resize", resizeThree);
+
+    // Render loop
+    const tick = () => {
+      // Auto rotate if not dragging
+      if (!prefersReducedMotion && !three.dragging) {
+        three.mesh.rotation.y += 0.006 + three.rotVelY;
+        three.mesh.rotation.x += 0.002 + three.rotVelX;
+
+        // Dampen inertia
+        three.rotVelX *= 0.93;
+        three.rotVelY *= 0.93;
+      }
+
+      renderer.render(scene, camera);
+      three.rafId = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  function getPoint(e) {
+    // Works for pointer/mouse/touch (pointer events unify it)
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function resizeThree() {
+    const host = $("#threeStage");
+    if (!host || !three.initialized) return;
+
+    const w = host.clientWidth;
+    const h = host.clientHeight;
+
+    three.renderer.setSize(w, h);
+    three.camera.aspect = w / h;
+    three.camera.updateProjectionMatrix();
+  }
+
+  // --------------------------
+  // Nav toggle (mobile)
+  // --------------------------
+  function initNav() {
+    const btn = $("#navToggle");
+    const menu = $("#navMenu");
+    if (!btn || !menu) return;
+
+    btn.addEventListener("click", () => {
+      const open = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!open));
+      menu.dataset.open = String(!open);
+    });
+
+    // Close menu when clicking a link (mobile UX)
+    $$(".nav__link", menu).forEach((a) => {
+      a.addEventListener("click", () => {
+        btn.setAttribute("aria-expanded", "false");
+        menu.dataset.open = "false";
+      });
+    });
+  }
+
+  // --------------------------
+  // Small CSS input style (added via JS for brevity)
+  // --------------------------
+  function injectInputStyles() {
+    const css = `
+      .input{
+        width: 100%;
+        margin: 8px 0 0;
+        padding: 12px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,.12);
+        background: rgba(255,255,255,.06);
+        color: var(--text);
+        outline: none;
+      }
+      .input:focus{
+        outline: 3px solid var(--ring);
+        outline-offset: 2px;
+      }
+      textarea.input{ resize: vertical; min-height: 120px; }
+    `;
+    const style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  // --------------------------
+  // Boot
+  // --------------------------
+  function boot() {
+    $("#year").textContent = String(new Date().getFullYear());
+    injectInputStyles();
+    initNav();
+
+    window.addEventListener("hashchange", navigate);
+    if (!location.hash) location.hash = "#/"; // default
+    navigate();
+  }
+
+  boot();
+})();
