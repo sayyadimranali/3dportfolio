@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="3D interactive portfolio with smooth transitions, dynamic content, and responsive UI." />
+  <title>3D Portfolio • Your Name</title>
+
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- Accessibility: skip link -->
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <header class="header" role="banner">
+    <div class="container header__inner">
+      <a class="brand" href="#/" aria-label="Home">
+        <span class="brand__mark" aria-hidden="true">⬢</span>
+        <span class="brand__text">YourName</span>
+      </a>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="nav__toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu">
+          <span class="sr-only">Toggle navigation</span>
+          <span aria-hidden="true">☰</span>
+        </button>
+
+        <ul class="nav__menu" id="navMenu">
+          <li><a class="nav__link" href="#/projects">Projects</a></li>
+          <li><a class="nav__link" href="#/skills">Skills</a></li>
+          <li><a class="nav__link" href="#/contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="app" role="main" tabindex="-1">
+    <!-- Router will inject views here -->
+    <div class="route" id="route" aria-live="polite"></div>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__inner">
+      <p>© <span id="year"></span> Your Name. Built with HTML/CSS/JS + Three.js.</p>
+      <div class="footer__links">
+        <a href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Three.js (CDN). If you need offline, download and bundle locally. -->
+  <script src="https://unpkg.com/three@0.161.0/build/three.min.js"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
